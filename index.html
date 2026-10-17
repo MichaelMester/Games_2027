@@ -73,18 +73,10 @@
     }
 
     .season-mark {
-      display: grid;
-      min-width: 132px;
-      aspect-ratio: 1;
-      place-items: center;
-      border: 1px solid rgba(233, 93, 63, 0.28);
-      border-radius: 50%;
-      color: var(--accent-dark);
-      background: rgba(255, 255, 255, 0.52);
-      font-family: "Rubik", sans-serif;
-      font-size: 2rem;
-      font-weight: 800;
-      box-shadow: 0 10px 28px rgba(233, 93, 63, 0.08);
+      display: block;
+      width: 132px;
+      height: 132px;
+      object-fit: contain;
     }
 
     .stats {
@@ -122,6 +114,13 @@
       border-radius: 10px;
       background: var(--paper);
       box-shadow: var(--shadow);
+    }
+
+    .copyright {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-align: center;
     }
 
     .table-heading {
@@ -361,7 +360,7 @@
     @media (max-width: 680px) {
       .page { width: min(100% - 24px, 1240px); padding-top: 30px; }
       .hero { align-items: start; }
-      .season-mark { min-width: 82px; font-size: 1.35rem; }
+      .season-mark { width: 82px; height: 82px; }
       .stats { gap: 8px; }
       .stat { padding: 13px 12px; }
       .stat-value { font-size: 1.3rem; }
@@ -399,7 +398,7 @@
         <p class="eyebrow">Tennis season · 2026–2027</p>
         <h1>לוח המשחקים</h1>
       </div>
-      <div class="season-mark" aria-label="עונת 2027">27׳</div>
+      <img class="season-mark" src="Ashdod.png" alt="סמל מועדון הטניס אשדוד">
     </header>
 
     <section class="stats" aria-label="סיכום המשחקים">
@@ -439,6 +438,7 @@
         </table>
       </div>
     </section>
+    <p class="copyright">© 2026 מיכאל מסטר. כל הזכויות שמורות.</p>
   </main>
   <dialog class="players-dialog" id="players-dialog" aria-labelledby="players-dialog-title">
     <div class="players-dialog-header">
