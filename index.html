@@ -566,8 +566,6 @@
 07/04/2027 19:30|ליגה א|בית''ר אשדוד M3|הפועל לוד M7
 14/04/2027 19:00|ליגה א|עירוני מודיעין M1|בית''ר אשדוד M3
 05/05/2027 19:00|ליגה א|בית''ר אשדוד M3|מכבי רחובות M3
-28/10/2026 19:30|ליגה א|בית''ר אשדוד M2|בית''ר אשדוד M3
-04/11/2026 19:30|ליגה א|בית''ר אשדוד M3|בית''ר אשדוד M2
 18/11/2026 19:30|ליגה א|בית''ר אשדוד M2|מכבי רחובות M3
 02/12/2026 19:30|ליגה א|בית''ר אשדוד M2|עירוני מודיעין M2
 16/12/2026 19:00|ליגה א|הפועל לוד M10|בית''ר אשדוד M2
@@ -633,8 +631,8 @@
       });
 
       gamesCount.textContent = filteredGames.length;
-      homeCount.textContent = filteredGames.filter(game => game.home.includes('הפועל אשדוד')).length;
-      awayCount.textContent = filteredGames.filter(game => game.away.includes('הפועל אשדוד')).length;
+      homeCount.textContent = filteredGames.filter(game => game.home.includes('אשדוד')).length;
+      awayCount.textContent = filteredGames.filter(game => game.away.includes('אשדוד')).length;
       visibleLeague.textContent = [
         selectedLeague === 'all' ? 'כל הליגות' : selectedLeague,
         selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam
