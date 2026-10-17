@@ -273,6 +273,91 @@
     .team-home { font-weight: 700; }
     .team-away { color: #465268; }
 
+    .team-link {
+      padding: 0;
+      border: 0;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+      font-weight: inherit;
+      text-align: right;
+      text-decoration: underline;
+      text-decoration-color: rgba(233, 93, 63, 0.45);
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    .team-link:hover,
+    .team-link:focus-visible { color: var(--accent-dark); }
+
+    .team-link:focus-visible {
+      outline: 3px solid rgba(233, 93, 63, 0.25);
+      outline-offset: 3px;
+    }
+
+    .players-dialog {
+      width: min(920px, calc(100% - 28px));
+      height: min(760px, calc(100% - 28px));
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      background: var(--paper);
+      box-shadow: 0 24px 70px rgba(23, 32, 51, 0.28);
+    }
+
+    .players-dialog::backdrop { background: rgba(23, 32, 51, 0.52); }
+
+    .players-dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--soft);
+    }
+
+    .players-dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .players-external-link {
+      color: var(--accent-dark);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .players-dialog-title {
+      margin: 0;
+      font-family: "Rubik", sans-serif;
+      font-size: 1.15rem;
+    }
+
+    .dialog-close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #d9d0c4;
+      border-radius: 6px;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .dialog-close:hover,
+    .dialog-close:focus-visible { color: var(--accent-dark); }
+
+    .players-frame {
+      display: block;
+      width: 100%;
+      height: calc(100% - 69px);
+      border: 0;
+      background: var(--paper);
+    }
+
     @media (max-width: 680px) {
       .page { width: min(100% - 24px, 1240px); padding-top: 30px; }
       .hero { align-items: start; }
@@ -355,6 +440,16 @@
       </div>
     </section>
   </main>
+  <dialog class="players-dialog" id="players-dialog" aria-labelledby="players-dialog-title">
+    <div class="players-dialog-header">
+      <h2 class="players-dialog-title" id="players-dialog-title">שחקני הקבוצה</h2>
+      <div class="players-dialog-actions">
+        <a class="players-external-link" id="players-external-link" href="#" target="_blank" rel="noopener">פתיחה בכרטיסייה חדשה</a>
+        <button class="dialog-close" id="dialog-close" type="button" aria-label="סגירת חלונית">×</button>
+      </div>
+    </div>
+    <iframe class="players-frame" id="players-frame" title="שחקני הקבוצה"></iframe>
+  </dialog>
   <script>
     const gamesBody = document.querySelector('#games-body');
     const leagueFilter = document.querySelector('#league-filter');
@@ -364,6 +459,21 @@
     const homeCount = document.querySelector('#home-count');
     const awayCount = document.querySelector('#away-count');
     const sortableHeaders = document.querySelectorAll('[data-sort-key]');
+    const playersDialog = document.querySelector('#players-dialog');
+    const playersDialogTitle = document.querySelector('#players-dialog-title');
+    const playersFrame = document.querySelector('#players-frame');
+    const playersExternalLink = document.querySelector('#players-external-link');
+    const dialogClose = document.querySelector('#dialog-close');
+    const teamPlayerLinks = {
+      "בית''ר אשדוד M2": 'https://www.tttm.co.il/t/526-1154-p/%D7%91%D7%99%D7%AA-%D7%A8-%D7%90%D7%A9%D7%93%D7%95%D7%93-M2',
+      "בית''ר אשדוד M3": 'https://www.tttm.co.il/t/196-1154-p/%D7%91%D7%99%D7%AA%D7%A8-%D7%90%D7%A9%D7%93%D7%95%D7%93-M3',
+      "הפועל אשדוד M1": 'https://www.tttm.co.il/t/68-1151-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M1',
+      "הפועל אשדוד M2": 'https://www.tttm.co.il/t/73-1155-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M2',
+      "הפועל אשדוד M3": 'https://www.tttm.co.il/t/540-1155-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M3',
+      "הפועל אשדוד M4": 'https://www.tttm.co.il/t/902-1155-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M4',
+      "הפועל אשדוד M5": 'https://www.tttm.co.il/t/903-1155-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M5',
+      "הפועל אשדוד M6": 'https://www.tttm.co.il/t/1420-1154-p/%D7%94%D7%A4%D7%95%D7%A2%D7%9C-%D7%90%D7%A9%D7%93%D7%95%D7%93-M6'
+    };
     const embeddedGamesText = `20/10/2026 19:30|לאומית גברים דרום|הפועל אשדוד M1|הפועל טנ''ש באר שבע M1
 01/11/2026 19:00|לאומית גברים דרום|בית''ר באר שבע M1|הפועל אשדוד M1
 01/12/2026 19:30|לאומית גברים דרום|הפועל אשדוד M1|הפועל לוד M5
@@ -513,10 +623,14 @@
           <td><span class="time">${game.time}</span></td>
           <td class="weekday">${game.date.toLocaleDateString('he-IL', { weekday: 'long' }).replace(/^יום\s+/, '')}</td>
           <td>${game.league}</td>
-          <td class="team-home">${game.home}</td>
-          <td class="team-away">${game.away}</td>
+          <td class="team-home">${renderTeam(game.home)}</td>
+          <td class="team-away">${renderTeam(game.away)}</td>
         </tr>
       `).join('');
+
+      gamesBody.querySelectorAll('.team-link').forEach(button => {
+        button.addEventListener('click', () => openPlayers(button.dataset.team));
+      });
 
       gamesCount.textContent = filteredGames.length;
       homeCount.textContent = filteredGames.filter(game => game.home.includes('הפועל אשדוד')).length;
@@ -526,6 +640,25 @@
         selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam
       ].join(' · ');
       updateSortHeaders();
+    }
+
+    function renderTeam(team) {
+      return teamPlayerLinks[team]
+        ? `<button class="team-link" type="button" data-team="${team}">${team}</button>`
+        : team;
+    }
+
+    function openPlayers(team) {
+      playersDialogTitle.textContent = `שחקני ${team}`;
+      playersFrame.src = teamPlayerLinks[team];
+      playersFrame.title = `שחקני ${team}`;
+      playersExternalLink.href = teamPlayerLinks[team];
+      playersDialog.showModal();
+    }
+
+    function closePlayers() {
+      playersDialog.close();
+      playersFrame.src = 'about:blank';
     }
 
     function compareGames(first, second) {
@@ -603,6 +736,10 @@
 
     leagueFilter.addEventListener('change', renderGames);
     teamFilter.addEventListener('change', renderGames);
+    dialogClose.addEventListener('click', closePlayers);
+    playersDialog.addEventListener('click', event => {
+      if (event.target === playersDialog) closePlayers();
+    });
     sortableHeaders.forEach(header => {
       header.querySelector('.sort-button').addEventListener('click', () => {
         if (sortKey === header.dataset.sortKey) {
