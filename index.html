@@ -631,8 +631,12 @@
       });
 
       gamesCount.textContent = filteredGames.length;
-      homeCount.textContent = filteredGames.filter(game => game.home.includes('אשדוד')).length;
-      awayCount.textContent = filteredGames.filter(game => game.away.includes('אשדוד')).length;
+      homeCount.textContent = selectedTeam === 'all'
+        ? filteredGames.length
+        : filteredGames.filter(game => game.home === selectedTeam).length;
+      awayCount.textContent = selectedTeam === 'all'
+        ? filteredGames.length
+        : filteredGames.filter(game => game.away === selectedTeam).length;
       visibleLeague.textContent = [
         selectedLeague === 'all' ? 'כל הליגות' : selectedLeague,
         selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam
