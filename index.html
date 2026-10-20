@@ -250,6 +250,8 @@
     tbody tr:hover { background: #fff7ee; }
     tbody tr.past-game { background: #e8f5e9; }
     tbody tr.past-game:hover { background: #d9efdc; }
+    tbody tr.today-game { background: #fff3b0; }
+    tbody tr.today-game:hover { background: #ffeb82; }
     tbody tr:last-child td { border-bottom: 0; }
 
     .date {
@@ -649,7 +651,9 @@
         : game => game.home === selectedTeam || game.home.includes('אשדוד');
 
       gamesBody.innerHTML = sortedGames.map(game => `
-        <tr class="${game.date < today ? 'past-game' : ''}">
+        <tr class="${game.date < today
+          ? 'past-game'
+          : game.date.getTime() === today.getTime() ? 'today-game' : ''}">
           <td class="date">${game.displayDate}</td>
           <td><span class="time">${game.time}</span></td>
           <td class="weekday">${game.date.toLocaleDateString('he-IL', { weekday: 'long' }).replace(/^יום\s+/, '')}</td>
