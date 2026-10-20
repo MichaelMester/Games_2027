@@ -418,7 +418,7 @@
           </select>
           <label class="sr-only" for="team-filter">סינון לפי קבוצה</label>
           <select class="league-filter" id="team-filter">
-            <option value="all">קבוצות אשדוד</option>
+            <option value="all">כל הקבוצות</option>
           </select>
           <select class="league-filter" id="venue-filter">
             <option value="all">משחקי בית וחוץ</option>
@@ -637,13 +637,16 @@
       const venueGames = selectedVenue === 'home'
         ? filteredGames.filter(game => selectedTeam === 'all'
           ? isAshdodHome(game)
-          : game.home === selectedTeam)
+          : game.home === selectedTeam || game.home.includes('אשדוד'))
         : selectedVenue === 'away'
           ? filteredGames.filter(game => selectedTeam === 'all'
             ? isAshdodAway(game)
             : game.away === selectedTeam && !isAshdodHome(game))
           : filteredGames;
       const sortedGames = [...venueGames].sort(compareGames);
+      const isHomeGameForSelectedTeam = selectedTeam === 'all'
+        ? isAshdodHome
+        : game => game.home === selectedTeam || game.home.includes('אשדוד');
 
       gamesBody.innerHTML = sortedGames.map(game => `
         <tr class="${game.date < today ? 'past-game' : ''}">
@@ -663,9 +666,7 @@
       gamesCount.textContent = venueGames.length;
       homeCount.textContent = selectedVenue === 'away'
         ? 0
-        : selectedTeam === 'all'
-          ? venueGames.filter(isAshdodHome).length
-          : venueGames.filter(isAshdodHome).length;
+        : venueGames.filter(isHomeGameForSelectedTeam).length;
       awayCount.textContent = selectedVenue === 'home'
         ? 0
         : selectedTeam === 'all'
@@ -760,7 +761,7 @@
         leagueFilter.value = [...leagueFilter.options].some(option => option.value === selectedLeague)
           ? selectedLeague
           : 'all';
-        teamFilter.innerHTML = '<option value="all">קבוצות אשדוד</option>';
+        teamFilter.innerHTML = '<option value="all">כל הקבוצות</option>';
         [...new Set(games
           .filter(game => game.home.includes('אשדוד') || game.away.includes('אשדוד'))
           .flatMap(game => [game.home, game.away])
