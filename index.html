@@ -126,7 +126,7 @@
     .table-heading {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 16px;
       padding: 19px 22px;
       border-bottom: 1px solid var(--line);
@@ -424,7 +424,6 @@
             <option value="home">משחקי בית</option>
             <option value="away">משחקי חוץ</option>
           </select>
-          <span class="badge" id="visible-league">כל הליגות</span>
         </div>
       </div>
       <div class="table-scroll">
@@ -460,7 +459,6 @@
     const leagueFilter = document.querySelector('#league-filter');
     const teamFilter = document.querySelector('#team-filter');
     const venueFilter = document.querySelector('#venue-filter');
-    const visibleLeague = document.querySelector('#visible-league');
     const gamesCount = document.querySelector('#games-count');
     const homeCount = document.querySelector('#home-count');
     const awayCount = document.querySelector('#away-count');
@@ -602,10 +600,23 @@
         date: new Date(year, month - 1, day),
         displayDate: `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${String(year).slice(-2)}`,
         time,
-        league,
+        league: normalizeLeague(league),
         home,
         away
       };
+    }
+
+    function normalizeLeague(league) {
+      return [
+        'ארצית גברים שפלה',
+        'ארצית גברים דרום',
+        'ארצית גברים יהודה',
+        'ליגה ארצית גברים שפלה',
+        'ליגה ארצית גברים דרום',
+        'ליגה ארצית גברים יהודה'
+      ].includes(league)
+        ? 'ארצית'
+        : league;
     }
 
     function renderGames() {
@@ -638,7 +649,7 @@
           <td class="date">${game.displayDate}</td>
           <td><span class="time">${game.time}</span></td>
           <td class="weekday">${game.date.toLocaleDateString('he-IL', { weekday: 'long' }).replace(/^יום\s+/, '')}</td>
-          <td>${game.league}</td>
+          <td>${displayLeague(game.league)}</td>
           <td class="team-home">${renderTeam(game.home)}</td>
           <td class="team-away">${renderTeam(game.away)}</td>
         </tr>
@@ -653,19 +664,12 @@
         ? 0
         : selectedTeam === 'all'
           ? venueGames.filter(isAshdodHome).length
-          : venueGames.filter(game => game.home === selectedTeam).length;
+          : venueGames.filter(isAshdodHome).length;
       awayCount.textContent = selectedVenue === 'home'
         ? 0
         : selectedTeam === 'all'
           ? venueGames.filter(isAshdodAway).length
           : venueGames.filter(game => game.away === selectedTeam && !isAshdodHome(game)).length;
-      visibleLeague.textContent = [
-        selectedLeague === 'all' ? 'כל הליגות' : selectedLeague,
-        selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam,
-        selectedVenue === 'all'
-          ? 'משחקי בית וחוץ'
-          : selectedVenue === 'home' ? 'משחקי בית' : 'משחקי חוץ'
-      ].join(' · ');
       updateSortHeaders();
     }
 
@@ -673,6 +677,10 @@
       return teamPlayerLinks[team]
         ? `<button class="team-link" type="button" data-team="${team}">${team}</button>`
         : team;
+    }
+
+    function displayLeague(league) {
+      return league === 'לאומית גברים דרום' ? 'לאומית' : league;
     }
 
     function openPlayers(team) {
@@ -744,8 +752,10 @@
         const selectedLeague = leagueFilter.value;
         const selectedTeam = teamFilter.value;
         leagueFilter.innerHTML = '<option value="all">כל הליגות</option>';
+        const leagueOrder = ['לאומית', 'ארצית', 'ליגה א'];
         [...new Set(games.map(game => game.league))]
-          .forEach(league => leagueFilter.add(new Option(league, league)));
+          .sort((first, second) => leagueOrder.indexOf(displayLeague(first)) - leagueOrder.indexOf(displayLeague(second)))
+          .forEach(league => leagueFilter.add(new Option(displayLeague(league), league)));
         leagueFilter.value = [...leagueFilter.options].some(option => option.value === selectedLeague)
           ? selectedLeague
           : 'all';
