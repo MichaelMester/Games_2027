@@ -419,6 +419,11 @@
           <select class="league-filter" id="team-filter">
             <option value="all">קבוצות אשדוד</option>
           </select>
+          <select class="league-filter" id="venue-filter">
+            <option value="all">משחקי בית וחוץ</option>
+            <option value="home">משחקי בית</option>
+            <option value="away">משחקי חוץ</option>
+          </select>
           <span class="badge" id="visible-league">כל הליגות</span>
         </div>
       </div>
@@ -454,6 +459,7 @@
     const gamesBody = document.querySelector('#games-body');
     const leagueFilter = document.querySelector('#league-filter');
     const teamFilter = document.querySelector('#team-filter');
+    const venueFilter = document.querySelector('#venue-filter');
     const visibleLeague = document.querySelector('#visible-league');
     const gamesCount = document.querySelector('#games-count');
     const homeCount = document.querySelector('#home-count');
@@ -605,6 +611,7 @@
     function renderGames() {
       const selectedLeague = leagueFilter.value;
       const selectedTeam = teamFilter.value;
+      const selectedVenue = venueFilter.value;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const leagueGames = selectedLeague === 'all'
@@ -613,7 +620,18 @@
       const filteredGames = selectedTeam === 'all'
         ? leagueGames
         : leagueGames.filter(game => game.home === selectedTeam || game.away === selectedTeam);
-      const sortedGames = [...filteredGames].sort(compareGames);
+      const isAshdodHome = game => game.home.includes('אשדוד');
+      const isAshdodAway = game => game.away.includes('אשדוד') && !isAshdodHome(game);
+      const venueGames = selectedVenue === 'home'
+        ? filteredGames.filter(game => selectedTeam === 'all'
+          ? isAshdodHome(game)
+          : game.home === selectedTeam)
+        : selectedVenue === 'away'
+          ? filteredGames.filter(game => selectedTeam === 'all'
+            ? isAshdodAway(game)
+            : game.away === selectedTeam && !isAshdodHome(game))
+          : filteredGames;
+      const sortedGames = [...venueGames].sort(compareGames);
 
       gamesBody.innerHTML = sortedGames.map(game => `
         <tr class="${game.date < today ? 'past-game' : ''}">
@@ -630,16 +648,23 @@
         button.addEventListener('click', () => openPlayers(button.dataset.team));
       });
 
-      gamesCount.textContent = filteredGames.length;
-      homeCount.textContent = selectedTeam === 'all'
-        ? filteredGames.length
-        : filteredGames.filter(game => game.home === selectedTeam).length;
-      awayCount.textContent = selectedTeam === 'all'
-        ? filteredGames.length
-        : filteredGames.filter(game => game.away === selectedTeam).length;
+      gamesCount.textContent = venueGames.length;
+      homeCount.textContent = selectedVenue === 'away'
+        ? 0
+        : selectedTeam === 'all'
+          ? venueGames.filter(isAshdodHome).length
+          : venueGames.filter(game => game.home === selectedTeam).length;
+      awayCount.textContent = selectedVenue === 'home'
+        ? 0
+        : selectedTeam === 'all'
+          ? venueGames.filter(isAshdodAway).length
+          : venueGames.filter(game => game.away === selectedTeam && !isAshdodHome(game)).length;
       visibleLeague.textContent = [
         selectedLeague === 'all' ? 'כל הליגות' : selectedLeague,
-        selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam
+        selectedTeam === 'all' ? 'קבוצות אשדוד' : selectedTeam,
+        selectedVenue === 'all'
+          ? 'משחקי בית וחוץ'
+          : selectedVenue === 'home' ? 'משחקי בית' : 'משחקי חוץ'
       ].join(' · ');
       updateSortHeaders();
     }
@@ -738,6 +763,7 @@
 
     leagueFilter.addEventListener('change', renderGames);
     teamFilter.addEventListener('change', renderGames);
+    venueFilter.addEventListener('change', renderGames);
     dialogClose.addEventListener('click', closePlayers);
     playersDialog.addEventListener('click', event => {
       if (event.target === playersDialog) closePlayers();
