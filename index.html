@@ -753,6 +753,9 @@
     function populateLeagueFilter() {
         const selectedLeague = leagueFilter.value;
         const selectedTeam = teamFilter.value;
+        const leagueGames = selectedLeague === 'all'
+          ? games
+          : games.filter(game => game.league === selectedLeague);
         leagueFilter.innerHTML = '<option value="all">כל הליגות</option>';
         const leagueOrder = ['לאומית', 'ארצית', 'ליגה א'];
         [...new Set(games.map(game => game.league))]
@@ -762,18 +765,29 @@
           ? selectedLeague
           : 'all';
         teamFilter.innerHTML = '<option value="all">כל הקבוצות</option>';
-        [...new Set(games
-          .filter(game => game.home.includes('אשדוד') || game.away.includes('אשדוד'))
-          .flatMap(game => [game.home, game.away])
-          .filter(team => team.includes('אשדוד')))]
-          .sort((first, second) => first.localeCompare(second, 'he'))
-          .forEach(team => teamFilter.add(new Option(team, team)));
+        const teamLeagues = new Map();
+        leagueGames.forEach(game => {
+          [game.home, game.away]
+            .filter(team => team.includes('אשדוד'))
+            .forEach(team => {
+              if (!teamLeagues.has(team)) teamLeagues.set(team, new Set());
+              teamLeagues.get(team).add(displayLeague(game.league));
+            });
+        });
+        [...teamLeagues.entries()]
+          .sort(([first], [second]) => first.localeCompare(second, 'he'))
+          .forEach(([team, leagues]) => {
+            teamFilter.add(new Option(`${team} (${[...leagues].join(', ')})`, team));
+          });
         teamFilter.value = [...teamFilter.options].some(option => option.value === selectedTeam)
           ? selectedTeam
           : 'all';
     }
 
-    leagueFilter.addEventListener('change', renderGames);
+    leagueFilter.addEventListener('change', () => {
+      populateLeagueFilter();
+      renderGames();
+    });
     teamFilter.addEventListener('change', renderGames);
     venueFilter.addEventListener('change', renderGames);
     dialogClose.addEventListener('click', closePlayers);
