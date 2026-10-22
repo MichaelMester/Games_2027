@@ -45,7 +45,7 @@
       align-items: end;
       justify-content: space-between;
       gap: 28px;
-      margin-bottom: 28px;
+      margin-bottom: 14px;
     }
 
     .eyebrow {
@@ -75,8 +75,8 @@
 
     .season-mark {
       display: block;
-      width: 132px;
-      height: 132px;
+      width: 150px;
+      height: 150px;
       object-fit: contain;
     }
 
@@ -156,6 +156,64 @@
       outline: 3px solid rgba(233, 93, 63, 0.25);
       outline-offset: 2px;
     }
+
+    .team-filter {
+      position: relative;
+      width: 360px;
+      min-width: 360px;
+    }
+
+    .team-filter-button {
+      width: 100%;
+      padding: 9px 34px 9px 12px;
+      border: 1px solid #d9d0c4;
+      border-radius: 6px;
+      color: var(--ink);
+      background: var(--paper);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: right;
+      cursor: pointer;
+    }
+
+    .team-filter-button:focus-visible {
+      outline: 3px solid rgba(233, 93, 63, 0.25);
+      outline-offset: 2px;
+    }
+
+    .team-filter-options {
+      position: absolute;
+      z-index: 2;
+      top: calc(100% + 6px);
+      right: 0;
+      left: 0;
+      display: none;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .team-filter.is-open .team-filter-options { display: grid; }
+
+    .team-filter-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 6px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .team-filter-option:hover { background: var(--soft); }
+
+    .team-filter-option input { accent-color: var(--accent); }
 
     .table-heading h2 {
       margin: 0;
@@ -363,7 +421,7 @@
     @media (max-width: 680px) {
       .page { width: min(100% - 24px, 1240px); padding-top: 30px; }
       .hero { align-items: start; }
-      .season-mark { width: 82px; height: 82px; }
+      .season-mark { width: 92px; height: 92px; }
       .stats { gap: 8px; }
       .stat { padding: 13px 12px; }
       .stat-value { font-size: 1.3rem; }
@@ -372,6 +430,10 @@
       .table-heading { align-items: stretch; flex-direction: column; }
       .controls { align-items: stretch; flex-direction: column; }
       .league-filter { width: 100%; }
+      .team-filter {
+        width: 100%;
+        min-width: 0;
+      }
       .table-scroll { overflow-x: hidden; }
       table {
         min-width: 0;
@@ -401,7 +463,7 @@
         <p class="eyebrow">Tennis season · 2026–2027</p>
         <h1>לוח המשחקים</h1>
       </div>
-      <img class="season-mark" src="Ashdod.png" alt="סמל מועדון הטניס אשדוד">
+      <img class="season-mark" src="אשדוד לוגו.svg" alt="סמל מועדון הטניס אשדוד">
     </header>
 
     <section class="stats" aria-label="סיכום המשחקים">
@@ -418,10 +480,15 @@
           <select class="league-filter" id="league-filter">
             <option value="all">כל הליגות</option>
           </select>
-          <label class="sr-only" for="team-filter">סינון לפי קבוצה</label>
-          <select class="league-filter" id="team-filter">
-            <option value="all">כל הקבוצות</option>
-          </select>
+          <div class="team-filter" id="team-filter">
+            <span class="sr-only" id="team-filter-label">סינון לפי קבוצה</span>
+            <button class="team-filter-button" id="team-filter-button" type="button"
+              aria-labelledby="team-filter-label team-filter-button" aria-expanded="false">
+              כל הקבוצות
+            </button>
+            <div class="team-filter-options" id="team-filter-options" role="group"
+              aria-labelledby="team-filter-label"></div>
+          </div>
           <select class="league-filter" id="venue-filter">
             <option value="all">משחקי בית וחוץ</option>
             <option value="home">משחקי בית</option>
@@ -461,6 +528,8 @@
     const gamesBody = document.querySelector('#games-body');
     const leagueFilter = document.querySelector('#league-filter');
     const teamFilter = document.querySelector('#team-filter');
+    const teamFilterButton = document.querySelector('#team-filter-button');
+    const teamFilterOptions = document.querySelector('#team-filter-options');
     const venueFilter = document.querySelector('#venue-filter');
     const gamesCount = document.querySelector('#games-count');
     const homeCount = document.querySelector('#home-count');
@@ -584,6 +653,7 @@
 14/04/2027 19:00|ליגה א|הפועל לוד M7|בית''ר אשדוד M2
 05/05/2027 19:00|ליגה א|בית''ר אשדוד M2|עירוני מודיעין M1`;
     let games = [];
+  const selectedTeams = new Set();
   let sortKey = 'date';
   let sortDirection = 1;
 
@@ -620,31 +690,31 @@
 
     function renderGames() {
       const selectedLeague = leagueFilter.value;
-      const selectedTeam = teamFilter.value;
       const selectedVenue = venueFilter.value;
+      const hasSelectedTeams = selectedTeams.size > 0;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const leagueGames = selectedLeague === 'all'
         ? games
         : games.filter(game => game.league === selectedLeague);
-      const filteredGames = selectedTeam === 'all'
+      const filteredGames = !hasSelectedTeams
         ? leagueGames
-        : leagueGames.filter(game => game.home === selectedTeam || game.away === selectedTeam);
+        : leagueGames.filter(game => selectedTeams.has(game.home) || selectedTeams.has(game.away));
       const isAshdodHome = game => game.home.includes('אשדוד');
       const isAshdodAway = game => game.away.includes('אשדוד') && !isAshdodHome(game);
       const venueGames = selectedVenue === 'home'
-        ? filteredGames.filter(game => selectedTeam === 'all'
+        ? filteredGames.filter(game => !hasSelectedTeams
           ? isAshdodHome(game)
-          : game.home === selectedTeam || game.home.includes('אשדוד'))
+          : isAshdodHome(game))
         : selectedVenue === 'away'
-          ? filteredGames.filter(game => selectedTeam === 'all'
+          ? filteredGames.filter(game => !hasSelectedTeams
             ? isAshdodAway(game)
-            : game.away === selectedTeam && !isAshdodHome(game))
+            : isAshdodAway(game))
           : filteredGames;
       const sortedGames = [...venueGames].sort(compareGames);
-      const isHomeGameForSelectedTeam = selectedTeam === 'all'
+      const isHomeGameForSelectedTeam = !hasSelectedTeams
         ? isAshdodHome
-        : game => game.home === selectedTeam || game.home.includes('אשדוד');
+        : isAshdodHome;
 
       gamesBody.innerHTML = sortedGames.map(game => `
         <tr class="${game.date < today
@@ -669,9 +739,10 @@
         : venueGames.filter(isHomeGameForSelectedTeam).length;
       awayCount.textContent = selectedVenue === 'home'
         ? 0
-        : selectedTeam === 'all'
+        : !hasSelectedTeams
           ? venueGames.filter(isAshdodAway).length
-          : venueGames.filter(game => game.away === selectedTeam && !isAshdodHome(game)).length;
+          : venueGames.filter(game => selectedTeams.has(game.away) && isAshdodAway(game)).length;
+          updateTeamFilterButton();
       updateSortHeaders();
     }
 
@@ -752,7 +823,6 @@
 
     function populateLeagueFilter() {
         const selectedLeague = leagueFilter.value;
-        const selectedTeam = teamFilter.value;
         const leagueGames = selectedLeague === 'all'
           ? games
           : games.filter(game => game.league === selectedLeague);
@@ -764,7 +834,6 @@
         leagueFilter.value = [...leagueFilter.options].some(option => option.value === selectedLeague)
           ? selectedLeague
           : 'all';
-        teamFilter.innerHTML = '<option value="all">כל הקבוצות</option>';
         const teamLeagues = new Map();
         leagueGames.forEach(game => {
           [game.home, game.away]
@@ -774,21 +843,69 @@
               teamLeagues.get(team).add(displayLeague(game.league));
             });
         });
-        [...teamLeagues.entries()]
+        const availableTeams = [...teamLeagues.entries()]
           .sort(([first], [second]) => first.localeCompare(second, 'he'))
-          .forEach(([team, leagues]) => {
-            teamFilter.add(new Option(`${team} (${[...leagues].join(', ')})`, team));
+        const validSelectedTeams = [...selectedTeams].filter(team =>
+          availableTeams.some(([availableTeam]) => availableTeam === team));
+        selectedTeams.clear();
+        validSelectedTeams.forEach(team => selectedTeams.add(team));
+        teamFilterOptions.innerHTML = '';
+        const allOption = createTeamOption('all', 'כל הקבוצות', selectedTeams.size === 0);
+        teamFilterOptions.append(allOption);
+        availableTeams.forEach(([team, leagues]) => {
+          teamFilterOptions.append(createTeamOption(
+            team,
+            `${team} (${[...leagues].join(', ')})`,
+            selectedTeams.has(team)
+          ));
+        });
+        updateTeamFilterButton();
+    }
+
+    function createTeamOption(value, label, checked) {
+      const option = document.createElement('label');
+      option.className = 'team-filter-option';
+      option.innerHTML = `<input type="checkbox" value="${value}"${checked ? ' checked' : ''}>${label}`;
+      option.querySelector('input').addEventListener('change', event => {
+        if (value === 'all') {
+          selectedTeams.clear();
+          teamFilterOptions.querySelectorAll('input:not([value="all"])').forEach(input => {
+            input.checked = false;
           });
-        teamFilter.value = [...teamFilter.options].some(option => option.value === selectedTeam)
-          ? selectedTeam
-          : 'all';
+        } else if (event.target.checked) {
+          selectedTeams.add(value);
+          teamFilterOptions.querySelector('input[value="all"]').checked = false;
+        } else {
+          selectedTeams.delete(value);
+          if (selectedTeams.size === 0) {
+            teamFilterOptions.querySelector('input[value="all"]').checked = true;
+          }
+        }
+        renderGames();
+      });
+      return option;
+    }
+
+    function updateTeamFilterButton() {
+      teamFilterButton.textContent = selectedTeams.size === 0
+        ? 'כל הקבוצות'
+        : `${selectedTeams.size} קבוצות נבחרו`;
     }
 
     leagueFilter.addEventListener('change', () => {
       populateLeagueFilter();
       renderGames();
     });
-    teamFilter.addEventListener('change', renderGames);
+    teamFilterButton.addEventListener('click', () => {
+      const isOpen = teamFilter.classList.toggle('is-open');
+      teamFilterButton.setAttribute('aria-expanded', isOpen);
+    });
+    document.addEventListener('click', event => {
+      if (!teamFilter.contains(event.target)) {
+        teamFilter.classList.remove('is-open');
+        teamFilterButton.setAttribute('aria-expanded', 'false');
+      }
+    });
     venueFilter.addEventListener('change', renderGames);
     dialogClose.addEventListener('click', closePlayers);
     playersDialog.addEventListener('click', event => {
