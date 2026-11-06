@@ -140,6 +140,29 @@
       gap: 10px;
     }
 
+    .filters-toggle {
+      display: none;
+      padding: 8px 12px;
+      border: 1px solid #d9d0c4;
+      border-radius: 6px;
+      color: var(--muted);
+      background: var(--paper);
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .filters-toggle:hover,
+    .filters-toggle:focus-visible {
+      color: var(--accent-dark);
+    }
+
+    .filters-toggle:focus-visible {
+      outline: 3px solid rgba(233, 93, 63, 0.25);
+      outline-offset: 2px;
+    }
+
     .league-filter {
       min-width: 210px;
       padding: 9px 34px 9px 12px;
@@ -220,6 +243,30 @@
       font-family: "Rubik", sans-serif;
       font-size: 1.15rem;
     }
+
+    .past-games-toggle {
+      padding: 8px 12px;
+      border: 1px solid #d9d0c4;
+      border-radius: 6px;
+      color: var(--muted);
+      background: var(--paper);
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .past-games-toggle:hover,
+    .past-games-toggle:focus-visible {
+      color: var(--accent-dark);
+    }
+
+    .past-games-toggle:focus-visible {
+      outline: 3px solid rgba(233, 93, 63, 0.25);
+      outline-offset: 2px;
+    }
+
+    .past-games-toggle[hidden] { display: none; }
 
     .sr-only {
       position: absolute;
@@ -428,7 +475,9 @@
       .stat-label { font-size: 0.78rem; }
       .table-heading { padding: 16px; }
       .table-heading { align-items: stretch; flex-direction: column; }
-      .controls { align-items: stretch; flex-direction: column; }
+      .filters-toggle { display: block; }
+      .controls { display: none; align-items: stretch; flex-direction: column; }
+      .table-heading.filters-open .controls { display: flex; }
       .league-filter { width: 100%; }
       .team-filter {
         width: 100%;
@@ -475,6 +524,8 @@
     <section class="table-shell">
       <div class="table-heading">
         <h2>משחקים קרובים</h2>
+        <button class="past-games-toggle" id="past-games-toggle" type="button" aria-expanded="false"></button>
+        <button class="filters-toggle" id="filters-toggle" type="button" aria-expanded="false">הצג סינון</button>
         <div class="controls">
           <label class="sr-only" for="league-filter">סינון לפי ליגה</label>
           <select class="league-filter" id="league-filter">
@@ -531,6 +582,9 @@
     const teamFilterButton = document.querySelector('#team-filter-button');
     const teamFilterOptions = document.querySelector('#team-filter-options');
     const venueFilter = document.querySelector('#venue-filter');
+    const pastGamesToggle = document.querySelector('#past-games-toggle');
+    const tableHeading = document.querySelector('.table-heading');
+    const filtersToggle = document.querySelector('#filters-toggle');
     const gamesCount = document.querySelector('#games-count');
     const homeCount = document.querySelector('#home-count');
     const awayCount = document.querySelector('#away-count');
@@ -656,6 +710,7 @@
   const selectedTeams = new Set();
   let sortKey = 'date';
   let sortDirection = 1;
+    let showPastGames = false;
 
     function parseGame(line) {
       const fields = line.split(line.includes('\t') ? '\t' : '|').map(field => field.trim());
@@ -712,11 +767,15 @@
             : isAshdodAway(game))
           : filteredGames;
       const sortedGames = [...venueGames].sort(compareGames);
+      const pastGames = sortedGames.filter(game => game.date < today);
+      const visibleGames = showPastGames
+        ? sortedGames
+        : sortedGames.filter(game => game.date >= today);
       const isHomeGameForSelectedTeam = !hasSelectedTeams
         ? isAshdodHome
         : isAshdodHome;
 
-      gamesBody.innerHTML = sortedGames.map(game => `
+      gamesBody.innerHTML = visibleGames.map(game => `
         <tr class="${game.date < today
           ? 'past-game'
           : game.date.getTime() === today.getTime() ? 'today-game' : ''}">
@@ -733,15 +792,20 @@
         button.addEventListener('click', () => openPlayers(button.dataset.team));
       });
 
-      gamesCount.textContent = venueGames.length;
+      pastGamesToggle.hidden = pastGames.length === 0;
+      pastGamesToggle.setAttribute('aria-expanded', String(showPastGames));
+      pastGamesToggle.textContent = showPastGames
+        ? `הסתר משחקים שהסתיימו (${pastGames.length})`
+        : `הצג משחקים שהסתיימו (${pastGames.length})`;
+      gamesCount.textContent = visibleGames.length;
       homeCount.textContent = selectedVenue === 'away'
         ? 0
-        : venueGames.filter(isHomeGameForSelectedTeam).length;
+        : visibleGames.filter(isHomeGameForSelectedTeam).length;
       awayCount.textContent = selectedVenue === 'home'
         ? 0
         : !hasSelectedTeams
-          ? venueGames.filter(isAshdodAway).length
-          : venueGames.filter(game => selectedTeams.has(game.away) && isAshdodAway(game)).length;
+          ? visibleGames.filter(isAshdodAway).length
+          : visibleGames.filter(game => selectedTeams.has(game.away) && isAshdodAway(game)).length;
           updateTeamFilterButton();
       updateSortHeaders();
     }
@@ -907,6 +971,15 @@
       }
     });
     venueFilter.addEventListener('change', renderGames);
+    pastGamesToggle.addEventListener('click', () => {
+      showPastGames = !showPastGames;
+      renderGames();
+    });
+    filtersToggle.addEventListener('click', () => {
+      const isOpen = tableHeading.classList.toggle('filters-open');
+      filtersToggle.setAttribute('aria-expanded', String(isOpen));
+      filtersToggle.textContent = isOpen ? 'הסתר סינון' : 'הצג סינון';
+    });
     dialogClose.addEventListener('click', closePlayers);
     playersDialog.addEventListener('click', event => {
       if (event.target === playersDialog) closePlayers();
